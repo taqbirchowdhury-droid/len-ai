@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101114">
+  <meta name="description" content="A simple, focused workspace for Len AI.">
+  <title>Len AI — Workspace</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #101114;
+      color: #f3f4f6;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --muted: #9295a0;
+      --line: #292b32;
+      --panel: #17181d;
+      --accent: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+    .app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { display: flex; flex-direction: column; padding: 22px 14px; border-right: 1px solid var(--line); background: #141519; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 24px; font-size: 15px; font-weight: 650; letter-spacing: -.02em; }
+    .brand-mark { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 10px; background: linear-gradient(135deg, #c4b5fd, #7c3aed); color: #171322; font-weight: 800; }
+    .new-chat { width: 100%; padding: 11px 12px; border: 1px solid #393640; border-radius: 9px; background: #211f27; text-align: left; cursor: pointer; transition: background .2s, border-color .2s; }
+    .new-chat:hover { background: #2a2732; border-color: #65558a; }
+    .nav-label { margin: 28px 10px 10px; color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+    .history { display: grid; gap: 4px; }
+    .history button { padding: 9px 10px; overflow: hidden; border: 0; border-radius: 7px; background: transparent; color: #c5c6ce; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    .history button:hover, .history button.active { background: #222329; color: #fff; }
+    .account { display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 16px 8px 0; border-top: 1px solid var(--line); }
+    .avatar { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: #34313e; color: #d7cdf8; font-size: 12px; font-weight: 700; }
+    .account-name { font-size: 13px; }
+    .account-plan { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    main { display: flex; min-width: 0; flex-direction: column; align-items: center; padding: 25px 28px 22px; }
+    .topbar { display: flex; width: min(100%, 860px); justify-content: flex-end; color: var(--muted); font-size: 12px; }
+    .workspace { display: flex; width: min(100%, 760px); flex: 1; flex-direction: column; justify-content: center; padding: 42px 0; }
+    .welcome { margin-bottom: 30px; text-align: center; }
+    .eyebrow { margin-bottom: 12px; color: #b7a3f4; font-size: 12px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(30px, 5vw, 44px); font-weight: 620; letter-spacing: -.055em; }
+    .subtitle { margin: 12px 0 0; color: var(--muted); font-size: 15px; }
+    .prompt-box { padding: 14px; border: 1px solid #363640; border-radius: 14px; background: var(--panel); box-shadow: 0 12px 40px #0002; }
+    .prompt-box:focus-within { border-color: #74619e; box-shadow: 0 0 0 3px #a78bfa18; }
+    textarea { display: block; width: 100%; min-height: 86px; resize: vertical; border: 0; outline: 0; background: transparent; color: #f3f4f6; font-size: 14px; line-height: 1.6; }
+    textarea::placeholder { color: #777984; }
+    .prompt-actions { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; }
+    .model { color: var(--muted); font-size: 12px; }
+    .send { display: grid; width: 34px; height: 34px; place-items: center; border: 0; border-radius: 9px; background: var(--accent); color: #1b1427; cursor: pointer; }
+    .send:hover { background: #c4b5fd; }
+    .send:disabled { opacity: .4; cursor: not-allowed; }
+    .suggestions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+    .suggestions button { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #15161a; color: #c8c9d0; font-size: 12px; text-align: left; cursor: pointer; }
+    .suggestions button:hover { border-color: #51466a; background: #1b1a20; }
+    .notice { margin-top: 20px; color: #777984; font-size: 11px; text-align: center; }
+    .response { display: none; margin-top: 20px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #15161a; color: #d6d7de; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+    @media (max-width: 700px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      main { min-height: 100vh; padding: 18px 18px; }
+      .workspace { justify-content: center; padding: 28px 0; }
+      .suggestions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Workspace navigation">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">L</span><span>Len AI</span></div>
+      <button class="new-chat" id="newChat" type="button">＋ &nbsp; New conversation</button>
+      <div class="nav-label">Recent</div>
+      <nav class="history" aria-label="Recent conversations">
+        <button class="active" type="button">Your workspace</button>
+      </nav>
+      <div class="account">
+        <div class="avatar" aria-hidden="true">L</div>
+        <div><div class="account-name">Workspace</div><div class="account-plan">Personal space</div></div>
+      </div>
+    </aside>
+
+    <main>
+      <div class="topbar">Workspace</div>
+      <section class="workspace" aria-labelledby="welcome-title">
+        <div class="welcome">
+          <div class="eyebrow">Your space to think</div>
+          <h1 id="welcome-title">What can I help with?</h1>
+          <p class="subtitle">Start with a question, an idea, or a task.</p>
+        </div>
+        <form class="prompt-box" id="promptForm">
+          <label for="prompt" class="sr-only" style="position:absolute;clip:rect(0,0,0,0);">Message Len AI</label>
+          <textarea id="prompt" placeholder="Ask anything or describe what you want to work on…" rows="3"></textarea>
+          <div class="prompt-actions">
+            <span class="model">Len AI workspace</span>
+            <button class="send" id="sendButton" type="submit" aria-label="Submit prompt" disabled>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5m0 0 6 6m-6-6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </form>
+        <div class="suggestions" aria-label="Prompt ideas">
+          <button type="button" data-prompt="Help me brainstorm ideas for a new project.">✦ &nbsp; Brainstorm an idea</button>
+          <button type="button" data-prompt="Help me write a clear, friendly email about…">✎ &nbsp; Draft a message</button>
+          <button type="button" data-prompt="Explain this topic in simple terms: ">⌕ &nbsp; Learn something new</button>
+          <button type="button" data-prompt="Help me make a plan for…">▤ &nbsp; Make a plan</button>
+        </div>
+        <div class="response" id="response" role="status" aria-live="polite"></div>
+        <p class="notice">This is a starter workspace. Connect an AI service to enable responses.</p>
+      </section>
+    </main>
+  </div>
+  <script>
+    const promptInput = document.querySelector('#prompt');
+    const sendButton = document.querySelector('#sendButton');
+    const response = document.querySelector('#response');
+    const form = document.querySelector('#promptForm');
+
+    promptInput.addEventListener('input', () => {
+      sendButton.disabled = promptInput.value.trim().length === 0;
+    });
+
+    document.querySelectorAll('[data-prompt]').forEach((button) => {
+      button.addEventListener('click', () => {
+        promptInput.value = button.dataset.prompt;
+        promptInput.focus();
+        promptInput.dispatchEvent(new Event('input'));
+      });
+    });
+
+    document.querySelector('#newChat').addEventListener('click', () => {
+      promptInput.value = '';
+      response.textContent = '';
+      response.style.display = 'none';
+      sendButton.disabled = true;
+      promptInput.focus();
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const message = promptInput.value.trim();
+      if (!message) return;
+      response.textContent = `Your prompt:\n${message}\n\nConnect an AI service to generate a response.`;
+      response.style.display = 'block';
+      promptInput.value = '';
+      sendButton.disabled = true;
+    });
+  </script>
+</body>
+</html>
